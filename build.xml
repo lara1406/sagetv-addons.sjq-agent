@@ -73,7 +73,12 @@
   </target>
 
   <target name="zip" depends="jars">
-	<zip destfile="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" includes="libs,engines,sjqagent.*" basedir="." />
+	<zip destfile="sjq-agent-${app.ver}.${revision.max-with-flags}.zip">
+		<zipfileset dir="libs" includes="*.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/libs" />
+		<zipfileset dir="engines" includes="*.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/engines" />
+		<zipfileset dir="." includes="sjq-agent.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/libs" />
+		<zipfileset dir="." includes="sjqagent.*" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/" />
+	</zip>
   </target>
 	
   <target name="deliver" depends="zip" description="Upload build to Google Code">
