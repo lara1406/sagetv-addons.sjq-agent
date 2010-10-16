@@ -88,7 +88,7 @@
 	<fail message="gc.username must be defined in ${gc.upload.settings}" unless="gc.username" />
 	<fail message="gc.password must be defined in ${gc.upload.settings}" unless="gc.password" />
 	<taskdef classname="net.bluecow.googlecode.ant.GoogleCodeUploadTask" name="gcupload" />
-	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-common-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 console agent (task client)" labels="QA-Snapshot,Type-Archive,OpSys-All" />
+	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 console agent (task client)" labels="QA-Snapshot,Type-Archive,OpSys-All" />
   </target>
 
   <target name="clean" depends="rmgensrc" description="Cleans this project">
