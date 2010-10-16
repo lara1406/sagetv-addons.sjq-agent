@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="SJQv4Agent" default="build" basedir=".">
+	  <!-- Import svn tasks -->
+	  <taskdef resource="org/tigris/subversion/svnant/svnantlib.xml" />
+	  <taskdef resource="proguard/ant/task.properties" />
+
+  <property name="app.libs" value="libs" />
+  <property name="app.ver" value="4.0.0" />
+  <property name="app.stable" value="971" />
+  <property name="src.token" value="@@" />
+  <property name="bld.dir" value="bld" />
+  <property name="gc.upload.settings" value="C:/snapshots/gc_login.properties" />
+	
+  <path id="project.class.path">
+    <!-- Add any additional non-server libs (such as JUnit) -->
+  	<fileset dir="${app.libs}" includes="**/*.jar"/>
+  </path>
+
+	  <target name="tstamp" description="Generate current timestamp">
+	    <tstamp>
+	      <format property="app.bld.date" pattern="yyyy.MM.dd" />
+	    </tstamp>
+	    <svn javahl="true">
+	            <wcVersion path="." />
+	    </svn>
+	    <exec executable="svn" failonerror="true" outputproperty="changelog.out">
+	       <arg value="log"/>
+	       <arg value="-r${app.stable}:HEAD"/>
+	    </exec>
+	  </target>
+	  	
+	  <target name="rmgensrc" description="Delete generated src files">
+	  	<delete failonerror="false" verbose="true">
+	  		<fileset dir="." includes="*.plugin.xml" />
+	  		<fileset dir="src" includes="**/Version.java" />
+	  	</delete>
+	  </target>
+		
+	  <target name="gensrc" depends="tstamp,rmgensrc" description="Create generated src files">
+	  	<copy todir="." overwrite="true" verbose="true">
+	  	  <fileset dir=".">
+	  	    <include name="**/*.in"/>
+	  	  </fileset>
+	  	  <mapper type="glob" from="*.in" to="*"/>
+	  	  <filterset begintoken="${src.token}" endtoken="${src.token}">
+	  	    <filter token="VER_NUM" value="${app.ver}"/>
+	  	    <filter token="BLD_NUM" value="${revision.max-with-flags}"/>
+	  	  	<filter token="MOD_DATE" value="${app.bld.date}"/>
+	  	  	<filter token="CHG_LOG" value="${changelog.out}"/>
+	  	  	<filter token="BLD_STABLE" value="${app.stable}"/>
+	  	  </filterset>
+	    </copy> 
+	  </target>
+
+  <target name="libs" depends="gensrc" description="Copy libs to WEB-INF/lib">
+
+  </target>
+
+  <target name="javac" depends="libs" description="Compile java source">
+  	<mkdir dir="${bld.dir}"/>
+    <javac srcdir="src" includes="**" encoding="utf-8"
+        destdir="${bld.dir}"
+        source="1.5" target="1.5" nowarn="true"
+        debug="true" debuglevel="lines,vars,source">
+      <classpath refid="project.class.path"/>
+    </javac>
+  </target>
+
+  <target name="build" depends="javac" description="Build this project" />
+
+  <target name="jars" depends="build">
+	<jar destfile="sjq-agent.jar" basedir="${bld.dir}" filesonly="true" />
+  </target>
+
+  <target name="zip" depends="jars">
+	<zip destfile="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" includes="libs,engines,sjqagent.*" basedir="." />
+  </target>
+	
+  <target name="deliver" depends="zip" description="Upload build to Google Code">
+	<available file="${gc.upload.settings}" property="gc.upload.enable" />
+	<fail message="${gc.upload.settings} file does not exist!" unless="gc.upload.enable" />
+	<property file="${gc.upload.settings}" />
+	<fail message="gc.username must be defined in ${gc.upload.settings}" unless="gc.username" />
+	<fail message="gc.password must be defined in ${gc.upload.settings}" unless="gc.password" />
+	<taskdef classname="net.bluecow.googlecode.ant.GoogleCodeUploadTask" name="gcupload" />
+	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-common-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-common-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 common jar" labels="QA-Snapshot,Type-Plugin,OpSys-All" />
+  </target>
+
+  <target name="clean" depends="rmgensrc" description="Cleans this project">
+  	<delete dir="${bld.dir}" failonerror="false" />
+  	<delete dir="app_plugin" failonerror="false" />
+  	<delete failonerror="false">
+  	  <fileset dir="." includes="sjq-agent.jar,sjq-agent-*.zip" />
+    </delete>
+  </target>
+
+</project>
