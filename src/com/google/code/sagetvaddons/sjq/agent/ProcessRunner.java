@@ -237,10 +237,6 @@ final public class ProcessRunner implements Runnable {
 			return new ExeResult(-1, e.getMessage());
 		}
 		Bindings bindings = new SimpleBindings();
-		bindings.put("MediaFileAPI", new sagex.api.MediaFileAPI());
-		bindings.put("Global", new sagex.api.Global());
-		bindings.put("Utility",new sagex.api.Utility());
-		bindings.put("PlaylistAPI",new sagex.api.PlaylistAPI());
 		bindings.put("AiringAPI",new sagex.api.AiringAPI());
 		bindings.put("AlbumAPI",new sagex.api.AlbumAPI());
 		bindings.put("CaptureDeviceAPI", new sagex.api.CaptureDeviceAPI());
@@ -249,14 +245,20 @@ final public class ProcessRunner implements Runnable {
 		bindings.put("Configuration",new sagex.api.Configuration());
 		bindings.put("Database",new sagex.api.Database());
 		bindings.put("FavoriteAPI",new sagex.api.FavoriteAPI());
+		bindings.put("Global", new sagex.api.Global());
+		bindings.put("LocatorAPI", new sagex.api.LocatorAPI());
+		bindings.put("MediaFileAPI", new sagex.api.MediaFileAPI());
 		bindings.put("MediaPlayerAPI",new sagex.api.MediaPlayerAPI());
+		bindings.put("PlaylistAPI",new sagex.api.PlaylistAPI());
+		bindings.put("PluginAPI", new sagex.api.PluginAPI());
 		bindings.put("SeriesInfoAPI",new sagex.api.SeriesInfoAPI());
 		bindings.put("ShowAPI",new sagex.api.ShowAPI());
+		bindings.put("SystemMessageAPI", new sagex.api.SystemMessageAPI());
 		bindings.put("TranscodeAPI",new sagex.api.TranscodeAPI());
 		bindings.put("TVEditorialAPI",new sagex.api.TVEditorialAPI());
+		bindings.put("UserRecordAPI", new sagex.api.UserRecordAPI());
+		bindings.put("Utility",new sagex.api.Utility());
 		bindings.put("WidgetAPI",new sagex.api.WidgetAPI());
-		bindings.put("Version",new sagex.api.Version());
-		bindings.put("SageAPI", new sagex.SageAPI());
 		bindings.put("SJQ4_METADATA", qt.getMetadata());
 		bindings.put("SJQ4_SCRIPT", script);
 		bindings.put("SJQ4_ARGS", args);
