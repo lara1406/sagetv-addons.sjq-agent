@@ -29,8 +29,8 @@ import com.google.code.sagetvaddons.sjq.shared.Task;
 
 public final class Config {
 	static private final Logger LOG = Logger.getLogger(Config.class);
-	static private final String DEFAULT_PROPS = "sjqagent.properties";
-	static private final String REFERENCE_PROPS = "sjqagent.properties.ref";
+	static private final String DEFAULT_PROPS = "../conf/sjqagent.properties";
+	static private final String REFERENCE_PROPS = "../conf/sjqagent.properties.ref";
 	static private final String TASK_PREFIX = "TASK.";
 	static private final int DEFAULT_PORT = 23344;
 	static private final String DEFAULT_SCHED = "* * * * *";

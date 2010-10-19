@@ -37,9 +37,9 @@ public final class Agent {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		PropertyConfigurator.configure("sjqagent.log4j.properties");
+		PropertyConfigurator.configure("../conf/sjqagent.log4j.properties");
 		Config cfg = Config.get();
-		File engines = new File("engines");
+		File engines = new File("../engines");
 		URLClassLoader clsLoader = null;
 		if(engines.isDirectory() && engines.canRead()) {
 			Collection<URL> urls = new ArrayList<URL>();

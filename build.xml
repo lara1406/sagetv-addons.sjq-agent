@@ -52,7 +52,7 @@
 	    </copy> 
 	  </target>
 
-  <target name="libs" depends="gensrc" description="Copy libs to WEB-INF/lib">
+  <target name="libs" depends="gensrc">
 
   </target>
 
@@ -74,13 +74,21 @@
 
   <target name="zip" depends="jars">
 	<zip destfile="sjq-agent-${app.ver}.${revision.max-with-flags}.zip">
-		<zipfileset dir="libs" includes="*.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/libs" />
-		<zipfileset dir="engines" includes="*.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/engines" />
-		<zipfileset dir="." includes="sjq-agent.jar" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/libs" />
-		<zipfileset dir="." includes="sjqagent.*" prefix="sjqagent-${app.ver}.${revision.max-with-flags}/" />
+		<zipfileset dir="lib" includes="*.jar" prefix="sjqagent/lib" />
+		<zipfileset dir="engines" includes="*.jar" prefix="sjqagent/engines" />
+		<zipfileset dir="." includes="sjq-agent.jar" prefix="sjqagent/lib" />
+		<zipfileset dir="." includes="conf/*" prefix="sjqagent/" />
+		<zipfileset dir="bins" includes="*.*" prefix="sjqagent/bin" />
 	</zip>
   </target>
-	
+
+  <target name="winsvc" depends="zip">
+	<copy file="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" tofile="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" />
+	<zip destfile="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" duplicate="fail" update="true">
+		<zipfileset dir="winsvc" prefix="sjqagent/" />
+	</zip>
+  </target>
+
   <target name="deliver" depends="zip" description="Upload build to Google Code">
 	<available file="${gc.upload.settings}" property="gc.upload.enable" />
 	<fail message="${gc.upload.settings} file does not exist!" unless="gc.upload.enable" />
