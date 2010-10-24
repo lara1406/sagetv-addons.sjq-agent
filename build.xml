@@ -32,7 +32,7 @@
 	  <target name="rmgensrc" description="Delete generated src files">
 	  	<delete failonerror="false" verbose="true">
 	  		<fileset dir="." includes="*.plugin.xml" />
-	  		<fileset dir="src" includes="**/Version.java" />
+	  		<fileset dir="src" includes="**/Ping.java" />
 	  	</delete>
 	  </target>
 		
@@ -42,6 +42,19 @@
 	  	    <include name="**/*.in"/>
 	  	  </fileset>
 	  	  <mapper type="glob" from="*.in" to="*"/>
+	  	  <filterset begintoken="${src.token}" endtoken="${src.token}">
+	  	    <filter token="VER_NUM" value="${app.ver}"/>
+	  	    <filter token="BLD_NUM" value="${revision.max-with-flags}"/>
+	  	  	<filter token="MOD_DATE" value="${app.bld.date}"/>
+	  	  	<filter token="CHG_LOG" value="${changelog.out}"/>
+	  	  	<filter token="BLD_STABLE" value="${app.stable}"/>
+	  	  </filterset>
+	    </copy> 
+	  	<copy todir="." overwrite="true" verbose="true">
+	  	  <fileset dir="src">
+	  	    <include name="**/*.javas"/>
+	  	  </fileset>
+	  	  <mapper type="glob" from="*.javas" to="*.java"/>
 	  	  <filterset begintoken="${src.token}" endtoken="${src.token}">
 	  	    <filter token="VER_NUM" value="${app.ver}"/>
 	  	    <filter token="BLD_NUM" value="${revision.max-with-flags}"/>

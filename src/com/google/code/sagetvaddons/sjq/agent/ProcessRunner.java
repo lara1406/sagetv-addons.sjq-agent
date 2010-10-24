@@ -17,23 +17,12 @@ package com.google.code.sagetvaddons.sjq.agent;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
-import javax.script.SimpleScriptContext;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -42,10 +31,11 @@ import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.environment.EnvironmentUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Logger;
-
-import sagex.SageAPI;
-import sagex.remote.rmi.RMISageAPI;
 
 import com.google.code.sagetvaddons.sjq.agent.network.ServerClient;
 import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
@@ -63,7 +53,7 @@ final public class ProcessRunner implements Runnable {
 		SKIP
 	}
 
-	static private class ExeResult {
+	static class ExeResult {
 		private int rc;
 		private String output;
 
@@ -149,7 +139,7 @@ final public class ProcessRunner implements Runnable {
 					log.error("Unable to read script '" + script.getAbsolutePath() + "'; marking task as FAILED!");
 					return -1;
 				}
-				result = runScript(exe.substring(SCRIPT_PREFIX.length()), getArgsArray(qt.getExeArguments()));
+				result = runScript(exe.substring(SCRIPT_PREFIX.length()), getArgsArray(qt.getExeArguments()), qt.getMaxTime() * 1000L);
 				return result.getRc();
 			}
 			File exeFile = new File(exe);
@@ -157,7 +147,7 @@ final public class ProcessRunner implements Runnable {
 				log.error("Unable to execute '" + exeFile.getAbsolutePath() + "'; marking task as FAILED!");
 				return -1;
 			}
-			result = runExternalExe();
+			result = runExternalExe(qt.getExecutable(), getArgsArray(qt.getExeArguments()), qt.getMaxTime() * 1000L);
 			return result.getRc();
 		} finally {
 			if(result != null && result.getOutput().length() > 0) {
@@ -208,7 +198,7 @@ final public class ProcessRunner implements Runnable {
 			log.error("'" + exeFile.getAbsolutePath() + "' does not exist or is not readable!  Test considered FAILED!");
 			return TestResult.FAIL;
 		}
-		ExeResult result = runScript(exe, getArgsArray(qt.getTestArgs()));
+		ExeResult result = runScript(exe, getArgsArray(qt.getTestArgs()), Config.get().getMaxTestTime() * 1000L);
 		ServerClient sc = null;
 		try {
 			sc = new ServerClient(qt.getServerHost(), qt.getServerPort());
@@ -226,86 +216,21 @@ final public class ProcessRunner implements Runnable {
 		}
 	}
 
-	private ExeResult runScript(String script, String[] args) {
-		int lastDot = script.lastIndexOf('.');
-		String ext = script.substring(lastDot + 1);
-		if(lastDot == -1 || ext.length() == 0)
-			return new ExeResult(-1, "Invalid script extension! [" + script + "]");
-		try {
-			SageAPI.setProvider(new RMISageAPI(qt.getServerHost(), qt.getRmiPort()));
-		} catch(Exception e) {
-			return new ExeResult(-1, e.getMessage());
-		}
-		Bindings bindings = new SimpleBindings();
-		bindings.put("AiringAPI",new sagex.api.AiringAPI());
-		bindings.put("AlbumAPI",new sagex.api.AlbumAPI());
-		bindings.put("CaptureDeviceAPI", new sagex.api.CaptureDeviceAPI());
-		bindings.put("CaptureDeviceInputAPI", new sagex.api.CaptureDeviceInputAPI());
-		bindings.put("ChannelAPI",new sagex.api.ChannelAPI());
-		bindings.put("Configuration",new sagex.api.Configuration());
-		bindings.put("Database",new sagex.api.Database());
-		bindings.put("FavoriteAPI",new sagex.api.FavoriteAPI());
-		bindings.put("Global", new sagex.api.Global());
-		bindings.put("LocatorAPI", new sagex.api.LocatorAPI());
-		bindings.put("MediaFileAPI", new sagex.api.MediaFileAPI());
-		bindings.put("MediaPlayerAPI",new sagex.api.MediaPlayerAPI());
-		bindings.put("PlaylistAPI",new sagex.api.PlaylistAPI());
-		bindings.put("PluginAPI", new sagex.api.PluginAPI());
-		bindings.put("SeriesInfoAPI",new sagex.api.SeriesInfoAPI());
-		bindings.put("ShowAPI",new sagex.api.ShowAPI());
-		bindings.put("SystemMessageAPI", new sagex.api.SystemMessageAPI());
-		bindings.put("TranscodeAPI",new sagex.api.TranscodeAPI());
-		bindings.put("TVEditorialAPI",new sagex.api.TVEditorialAPI());
-		bindings.put("UserRecordAPI", new sagex.api.UserRecordAPI());
-		bindings.put("Utility",new sagex.api.Utility());
-		bindings.put("WidgetAPI",new sagex.api.WidgetAPI());
-		bindings.put("SJQ4_METADATA", qt.getMetadata());
-		bindings.put("SJQ4_SCRIPT", script);
-		bindings.put("SJQ4_ARGS", args);
-		ScriptContext context = new SimpleScriptContext();
-		context.setWriter(new StringWriter());
-		context.setErrorWriter(new StringWriter());
-		context.setReader(new StringReader(""));
-		context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-		ScriptEngineManager factory = new ScriptEngineManager(Config.get().getClsLoader());
-		ScriptEngine engine = factory.getEngineByExtension(ext);
-		if(engine == null)
-			return new ExeResult(-1, "Unsupported script extension '" + ext + "'; maybe you need to install a scripting engine for this language?");
-		FileReader reader = null;
-		try {
-			int rc;
-			reader = new FileReader(new File(script));
-			Object o = engine.eval(reader, context);
-			if(o == null)
-				rc = 0;
-			else if(o instanceof Integer)
-				rc = (Integer)o;
-			else
-				rc = -1;
-			StringBuilder output = new StringBuilder();
-			if(context.getWriter().toString().length() > 0) {
-				output.append("----- stdout -----\n\n");
-				output.append(context.getWriter().toString());
-				output.append("------------------\n\n");
-			}
-			if(context.getErrorWriter().toString().length() > 0) {
-				output.append("----- stderr -----\n\n");
-				output.append(context.getErrorWriter().toString());
-				output.append("------------------\n\n");
-			}
-			return new ExeResult(rc, output.toString());
-		} catch (FileNotFoundException e) {
-			return new ExeResult(-1, e.getMessage());
-		} catch (ScriptException e) {
-			return new ExeResult(-1, e.getMessage());
-		} finally {
-			if(reader != null)
-				try { reader.close(); } catch(IOException e) { log.warn("IOError", e); }
-		}			
+	@SuppressWarnings("unchecked")
+	private ExeResult runScript(final String script, String[] args, long maxTimeMillis) {
+		
+		String javaExe = System.getProperty("java.home") + "/bin/java";
+		if(SystemUtils.IS_OS_WINDOWS)
+			javaExe = javaExe.concat(".exe");
+		CommandLine cmd = new CommandLine(javaExe);
+		Collection<?> jars = FileUtils.listFiles(new File("../lib"), new String[] {"jar"}, false);
+		jars.addAll(FileUtils.listFiles(new File("../engines"), new String[] {"jar"}, false));
+		cmd.addArguments((String[])ArrayUtils.addAll(new String[] {"-cp", StringUtils.join(jars, SystemUtils.PATH_SEPARATOR), ScriptRunner.class.getName(), qt.getServerHost(), String.valueOf(qt.getRmiPort()), String.valueOf(qt.getQueueId()), script}, args));
+		return runExternalExe(cmd.getExecutable(), cmd.getArguments(), maxTimeMillis);
 	}
 
-	private ExeResult runExternalExe() {
-		File exeFile = new File(qt.getExecutable());
+	private ExeResult runExternalExe(String exe, String[] args, long maxTimeMillis) {
+		File exeFile = new File(exe);
 		if(!exeFile.canExecute()) {
 			String err = "Exe does not exist or cannot be executed! [" + exeFile.getAbsolutePath() + "]";
 			log.error(err);
@@ -314,11 +239,11 @@ final public class ProcessRunner implements Runnable {
 		ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 		ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 		CommandLine cmd = new CommandLine(exeFile);
-		cmd.addArguments(qt.getExeArguments());
+		cmd.addArguments(args);
 		Executor executor = new DefaultExecutor();
 		executor.setExitValues(null);
 		executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
-		ExecuteWatchdog watchdog = new ExecuteWatchdog(qt.getMaxTime() * 1000);
+		ExecuteWatchdog watchdog = new ExecuteWatchdog(maxTimeMillis);
 		ACTIVE_TASKS.put(genThreadName(qt), new KillableExe(watchdog));
 		executor.setWatchdog(watchdog);
 		int rc = -1;

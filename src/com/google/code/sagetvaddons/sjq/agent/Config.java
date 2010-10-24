@@ -175,4 +175,8 @@ public final class Config {
 	public void setClsLoader(ClassLoader clsLoader) {
 		this.clsLoader = clsLoader;
 	}
+	
+	public long getMaxTestTime() {
+		return 30;
+	}
 }
