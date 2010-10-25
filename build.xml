@@ -50,7 +50,7 @@
 	  	  	<filter token="BLD_STABLE" value="${app.stable}"/>
 	  	  </filterset>
 	    </copy> 
-	  	<copy todir="." overwrite="true" verbose="true">
+	  	<copy todir="src" overwrite="true" verbose="true">
 	  	  <fileset dir="src">
 	  	    <include name="**/*.javas"/>
 	  	  </fileset>
