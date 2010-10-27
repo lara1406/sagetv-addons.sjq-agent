@@ -19,10 +19,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.apache.log4j.Logger;
-
 import com.google.code.sagetvaddons.sjq.agent.ProcessRunner;
 import com.google.code.sagetvaddons.sjq.listener.Command;
+import com.google.code.sagetvaddons.sjq.listener.Handler;
 import com.google.code.sagetvaddons.sjq.listener.NetworkAck;
 import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
 
@@ -30,16 +29,14 @@ import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
  * @author dbattams
  *
  */
-public class Exe extends Command {
-	static private final Logger LOG = Logger.getLogger(Exe.class);
+public class Isactive extends Command {
 	
 	/**
 	 * @param in
 	 * @param out
 	 */
-	public Exe(ObjectInputStream in, ObjectOutputStream out) {
+	public Isactive(ObjectInputStream in, ObjectOutputStream out) {
 		super(in, out);
-		// TODO Auto-generated constructor stub
 	}
 
 	/* (non-Javadoc)
@@ -49,12 +46,8 @@ public class Exe extends Command {
 	public void execute() throws IOException {
 		try {
 			QueuedTask qt = (QueuedTask)getIn().readObject();
-			LOG.info("Received task " + qt.getQueueId() + " of type '" + qt.getId() + "' from " + qt.getServerHost() + ":" + qt.getServerPort() + "...");
-			Thread t = new Thread(new ProcessRunner(qt));
-			t.setName(ProcessRunner.genThreadName(qt));
-			t.setDaemon(true);
-			t.start();
-			getOut().writeObject(NetworkAck.get(NetworkAck.OK + QueuedTask.State.RUNNING.toString()));
+			qt.setServerHost(Handler.SOCKET_DETAILS.get().getRemoteAddress());
+			getOut().writeObject(NetworkAck.get(NetworkAck.OK + String.valueOf(ProcessRunner.isActive(qt))));
 			getOut().flush();
 		} catch (ClassNotFoundException e) {
 			throw new IOException(e);

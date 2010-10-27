@@ -47,7 +47,7 @@ import com.google.code.sagetvaddons.sjq.shared.QueuedTask.State;
  */
 final public class ProcessRunner implements Runnable {
 	static private final Logger LOG = Logger.getLogger(ProcessRunner.class);
-	
+
 	static public enum TestResult {
 		PASS,
 		FAIL,
@@ -83,8 +83,8 @@ final public class ProcessRunner implements Runnable {
 	public static final String genThreadName(QueuedTask qt) {
 		return "SJQ4Task-" + qt.getServerHost() + "-" + qt.getServerPort() + "-" + qt.getQueueId();
 	}
-	
-	public static final boolean kill(String threadName) {
+
+	synchronized public static final boolean kill(String threadName) {
 		Killable k = ACTIVE_TASKS.remove(threadName);
 		if(k != null) {
 			LOG.warn("Killing task thread '" + threadName + "'");
@@ -93,13 +93,19 @@ final public class ProcessRunner implements Runnable {
 		return k != null;
 	}
 
-	public static final void killAll() {
+	synchronized public static final void killAll() {
 		LOG.warn("Killing all active tasks! [count=" + ACTIVE_TASKS.size() + "]");
 		for(String tName : ACTIVE_TASKS.keySet())
 			kill(tName);
 		ACTIVE_TASKS.clear();
 	}
-	
+
+	synchronized public static boolean isActive(QueuedTask qt) {
+		boolean retVal = ACTIVE_TASKS.containsKey(genThreadName(qt));
+		LOG.warn("isActive(" + genThreadName(qt) + ") = " + retVal + "; " + ACTIVE_TASKS.keySet());
+		return retVal;
+	}
+
 	private final Logger log;
 	private final QueuedTask qt;
 	private final Map<String, String> env;
@@ -108,6 +114,9 @@ final public class ProcessRunner implements Runnable {
 	 * 
 	 */
 	public ProcessRunner(QueuedTask qt) {
+		synchronized(ProcessRunner.class) {
+			ACTIVE_TASKS.put(genThreadName(qt), null);
+		}
 		this.qt = qt;
 		log = Logger.getLogger(ProcessRunner.class.getName() + "." + qt.getServerHost().replace(".", "_") + "-" + qt.getServerPort() + "-" + qt.getQueueId());
 		env = new HashMap<String, String>();
@@ -127,22 +136,33 @@ final public class ProcessRunner implements Runnable {
 	@Override
 	public void run() {
 		log.info("Starting process runner for: " + qt);
-		TestResult testResult = runTest();
-		if(testResult == TestResult.FAIL) {
-			qt.setState(State.RETURNED);
-			qt.setCompleted(new Date());
-		} else if(testResult == TestResult.SKIP) {
-			qt.setState(State.SKIPPED);
-			qt.setCompleted(new Date());
-		} else {
-			int rc = runExe();
-			qt.setCompleted(new Date());
-			qt.setState(rc >= qt.getMinReturnCode() && rc <= qt.getMaxReturnCode() ? State.COMPLETED : State.FAILED);			
-		}
+		boolean forceUpdate = true;
 		try {
-			updateTask();
-		} catch (IOException e) {
-			log.fatal("Failed to update " + qt, e);
+			TestResult testResult = runTest();
+			if(testResult == TestResult.FAIL) {
+				qt.setState(State.RETURNED);
+				qt.setCompleted(new Date());
+			} else if(testResult == TestResult.SKIP) {
+				qt.setState(State.SKIPPED);
+				qt.setCompleted(new Date());
+			} else {
+				int rc = runExe();
+				qt.setCompleted(new Date());
+				qt.setState(rc >= qt.getMinReturnCode() && rc <= qt.getMaxReturnCode() ? State.COMPLETED : State.FAILED);			
+			}
+			try {
+				updateTask();
+				forceUpdate = false;
+			} catch (IOException e) {
+				log.fatal("Failed to update " + qt, e);
+			}
+		} finally {
+			if(forceUpdate) {
+				LOG.warn("Removing task from active list: " + genThreadName(qt));
+				synchronized(ProcessRunner.class) {
+					ACTIVE_TASKS.remove(genThreadName(qt));
+				}
+			}
 		}
 	}
 
@@ -183,12 +203,16 @@ final public class ProcessRunner implements Runnable {
 
 	private void updateTask() throws IOException {
 		ServerClient clnt = null;
-		try {
-			clnt = new ServerClient(qt.getServerHost(), qt.getServerPort());
-			clnt.update(qt);
-		} finally {
-			if(clnt != null)
-				clnt.close();		
+		synchronized(ProcessRunner.class) {
+			try {
+				clnt = new ServerClient(qt.getServerHost(), qt.getServerPort());
+				clnt.update(qt);
+			} finally {
+				if(clnt != null)
+					clnt.close();		
+			}
+			LOG.warn("Removing task from active list: " + genThreadName(qt));
+			ACTIVE_TASKS.remove(genThreadName(qt));
 		}
 	}
 
@@ -235,7 +259,7 @@ final public class ProcessRunner implements Runnable {
 
 	@SuppressWarnings("unchecked")
 	private ExeResult runScript(final String script, String[] args, long maxTimeMillis) {
-		
+
 		String javaExe = System.getProperty("java.home") + "/bin/java";
 		if(SystemUtils.IS_OS_WINDOWS)
 			javaExe = javaExe.concat(".exe");
@@ -261,7 +285,9 @@ final public class ProcessRunner implements Runnable {
 		executor.setExitValues(null);
 		executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
 		ExecuteWatchdog watchdog = new ExecuteWatchdog(maxTimeMillis);
-		ACTIVE_TASKS.put(genThreadName(qt), new KillableExe(watchdog));
+		synchronized(ProcessRunner.class){ 
+			ACTIVE_TASKS.put(genThreadName(qt), new KillableExe(watchdog));
+		}
 		executor.setWatchdog(watchdog);
 		int rc = -1;
 		try {
@@ -271,8 +297,6 @@ final public class ProcessRunner implements Runnable {
 			log.error("Execution failed! [rc=" + rc + "]", e);
 		} catch (IOException e) {
 			log.error("IOError", e);
-		} finally {
-			ACTIVE_TASKS.remove(genThreadName(qt));
 		}
 		StringBuilder output = new StringBuilder();
 		if(stdout.toString().length() > 0) {
