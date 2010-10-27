@@ -46,7 +46,8 @@ import com.google.code.sagetvaddons.sjq.shared.QueuedTask.State;
  *
  */
 final public class ProcessRunner implements Runnable {
-
+	static private final Logger LOG = Logger.getLogger(ProcessRunner.class);
+	
 	static public enum TestResult {
 		PASS,
 		FAIL,
@@ -82,7 +83,23 @@ final public class ProcessRunner implements Runnable {
 	public static final String genThreadName(QueuedTask qt) {
 		return "SJQ4Task-" + qt.getServerHost() + "-" + qt.getServerPort() + "-" + qt.getQueueId();
 	}
+	
+	public static final boolean kill(String threadName) {
+		Killable k = ACTIVE_TASKS.remove(threadName);
+		if(k != null) {
+			LOG.warn("Killing task thread '" + threadName + "'");
+			k.kill();
+		}
+		return k != null;
+	}
 
+	public static final void killAll() {
+		LOG.warn("Killing all active tasks! [count=" + ACTIVE_TASKS.size() + "]");
+		for(String tName : ACTIVE_TASKS.keySet())
+			kill(tName);
+		ACTIVE_TASKS.clear();
+	}
+	
 	private final Logger log;
 	private final QueuedTask qt;
 	private final Map<String, String> env;
@@ -269,7 +286,7 @@ final public class ProcessRunner implements Runnable {
 			output.append("------------------\n\n");
 		}
 		if(watchdog.killedProcess())
-			return new ExeResult(-1, "*** Process killed by SJQ because it ran too long! ***\n\n" + (output.toString().length() > 0 ? output.toString() : ""));
+			return new ExeResult(-1, "*** Process killed by SJQ ***\n\n" + (output.toString().length() > 0 ? output.toString() : ""));
 		return new ExeResult(rc, output.toString());
 	}
 

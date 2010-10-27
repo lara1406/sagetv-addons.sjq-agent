@@ -18,38 +18,37 @@ package com.google.code.sagetvaddons.sjq.agent.commands;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Date;
 
-import com.google.code.sagetvaddons.sjq.agent.Config;
+import com.google.code.sagetvaddons.sjq.agent.ProcessRunner;
 import com.google.code.sagetvaddons.sjq.listener.Command;
 import com.google.code.sagetvaddons.sjq.listener.NetworkAck;
-import com.google.code.sagetvaddons.sjq.listener.Handler;
-import com.google.code.sagetvaddons.sjq.shared.Client;
+import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
 
 /**
  * @author dbattams
  *
  */
-public class Ping extends Command {
-
-	public Ping(ObjectInputStream in, ObjectOutputStream out) {
+public class Kill extends Command {
+	
+	/**
+	 * @param in
+	 * @param out
+	 */
+	public Kill(ObjectInputStream in, ObjectOutputStream out) {
 		super(in, out);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.google.code.sagetvaddons.sjq.listener.Command#execute()
+	 */
 	@Override
 	public void execute() throws IOException {
-		Config cfg = Config.get();
-		ObjectOutputStream out = getOut();
-		String bldVer = "@@BLD_NUM@@";
-		int ver;
-		if(bldVer.endsWith("M"))
-			ver = Integer.parseInt(bldVer.substring(0, bldVer.length() - 1));
-		else
-			ver = Integer.parseInt(bldVer);
-		out.writeObject(new Client(Handler.SOCKET_DETAILS.get().getLocalAddress(), cfg.getPort(), 0, cfg.getSchedule(), Client.State.ONLINE, new Date(), cfg.getTotalResources(), cfg.getTasks(), ver));
-		out.flush();
-		NetworkAck ack = readAck();
-		if(!ack.isOk())
-			throw new IOException("Did not receive expected ACK from peer!");
+		try {
+			QueuedTask qt = (QueuedTask)getIn().readObject();
+			getOut().writeObject(NetworkAck.get(ProcessRunner.kill(ProcessRunner.genThreadName(qt)) ? NetworkAck.OK : NetworkAck.ERR + "Unable to kill specified task!"));
+			getOut().flush();
+		} catch (ClassNotFoundException e) {
+			throw new IOException(e);
+		}
 	}
 }
