@@ -17,7 +17,9 @@ package com.google.code.sagetvaddons.sjq.agent;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,13 +35,30 @@ import name.pachler.nio.file.WatchService;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import com.google.code.sagetvaddons.sjq.shared.Client;
 import com.google.code.sagetvaddons.sjq.shared.Task;
 
 public final class Config {
 	static private final Logger LOG = Logger.getLogger(Config.class);
+	
+	static private final String OPT_PORT = "AGENT.PORT";
+	static private final String OPT_CLNT_SCHED = "AGENT.SCHEDULE";
+	static private final String OPT_CLNT_RES = "AGENT.RESOURCES";
+	static private final String TASK_PREFIX = "TASK.";
+	static private final String TASK_OPT_EXE = "EXE";
+	static private final String TASK_OPT_ARGS = "ARGS";
+	static private final String TASK_OPT_SCHED = "SCHEDULE";
+	static private final String TASK_OPT_RES = "RESOURCES";
+	static private final String TASK_OPT_MAXPROCS = "MAXPROCS";
+	static private final String TASK_OPT_MAXTIME = "MAXTIME";
+	static private final String TASK_OPT_MAXRATIO = "MAXTIMERATIO";
+	static private final String TASK_OPT_RCMIN = "RCMIN";
+	static private final String TASK_OPT_RCMAX = "RCMAX";
+	static private final String TASK_OPT_TEST = "TEST";
+	static private final String TASK_OPT_TESTARGS = "TESTARGS";
+	
 	static private final String DEFAULT_PROPS = "../conf/sjqagent.properties";
 	static private final String REFERENCE_PROPS = "../conf/sjqagent.properties.ref";
-	static private final String TASK_PREFIX = "TASK.";
 	static private final int DEFAULT_PORT = 23344;
 	static private final String DEFAULT_SCHED = "* * * * *";
 	static private final int DEFAULT_RESOURCES = 100;
@@ -164,35 +183,35 @@ public final class Config {
 					tasks.put(parts[1].toUpperCase(), t);
 				}
 				String option = parts[2].toUpperCase();
-				if(option.equals("EXE"))
+				if(option.equals(TASK_OPT_EXE))
 					t.setExecutable(props.getProperty(k.toString()));
-				else if(option.equals("ARGS"))
+				else if(option.equals(TASK_OPT_ARGS))
 					t.setExeArguments(props.getProperty(k.toString()));
-				else if(option.equals("SCHEDULE"))
+				else if(option.equals(TASK_OPT_SCHED))
 					t.setSchedule(props.getProperty(k.toString()));
-				else if(option.equals("RESOURCES"))
+				else if(option.equals(TASK_OPT_RES))
 					t.setRequiredResources(Integer.parseInt(props.getProperty(k.toString())));
-				else if(option.equals("MAXPROCS"))
+				else if(option.equals(TASK_OPT_MAXPROCS))
 					t.setMaxInstances(Integer.parseInt(props.getProperty(k.toString())));
-				else if(option.equals("MAXTIME"))
+				else if(option.equals(TASK_OPT_MAXTIME))
 					t.setMaxTime(Integer.parseInt(props.getProperty(k.toString())));
-				else if(option.equals("MAXTIMERATIO"))
+				else if(option.equals(TASK_OPT_MAXRATIO))
 					t.setMaxTimeRatio(Float.parseFloat(props.getProperty(k.toString())));
-				else if(option.equals("RCMIN"))
+				else if(option.equals(TASK_OPT_RCMIN))
 					t.setMinReturnCode(Integer.parseInt(props.getProperty(k.toString())));
-				else if(option.equals("RCMAX"))
+				else if(option.equals(TASK_OPT_RCMAX))
 					t.setMaxReturnCode(Integer.parseInt(props.getProperty(k.toString())));
-				else if(option.equals("TEST"))
+				else if(option.equals(TASK_OPT_TEST))
 					t.setTest(props.getProperty(k.toString()));
-				else if(option.equals("TESTARGS"))
+				else if(option.equals(TASK_OPT_TESTARGS))
 					t.setTestArgs(props.getProperty(k.toString()));
 				else
 					LOG.warn("Unknown property '" + option + "' defined for task '" + parts[1].toUpperCase() + "', skipping!");
-			} else if(k.toString().toUpperCase().equals("AGENT.PORT"))
+			} else if(k.toString().toUpperCase().equals(OPT_PORT))
 				port = Integer.parseInt(props.get(k).toString());
-			else if(k.toString().toUpperCase().equals("AGENT.SCHEDULE"))
+			else if(k.toString().toUpperCase().equals(OPT_CLNT_SCHED))
 				schedule = props.getProperty(k.toString());
-			else if(k.toString().toUpperCase().equals("AGENT.RESOURCES"))
+			else if(k.toString().toUpperCase().equals(OPT_CLNT_RES))
 				totalResources = Integer.parseInt(props.getProperty(k.toString()));
 			else
 				LOG.warn("Unrecognized property skipped! [" + k + "]");
@@ -227,5 +246,35 @@ public final class Config {
 
 	synchronized public long getMaxTestTime() {
 		return 30;
+	}
+	
+	synchronized public boolean save(Client clnt) {
+		Properties props = new Properties();
+		props.setProperty(OPT_PORT.toLowerCase(), String.valueOf(clnt.getPort()));
+		props.setProperty(OPT_CLNT_SCHED.toLowerCase(), clnt.getSchedule());
+		props.setProperty(OPT_CLNT_RES.toLowerCase(), String.valueOf(clnt.getMaxResources()));
+		for(Task t : clnt.getTasks()) {
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_EXE).toLowerCase(), t.getExecutable());
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_ARGS).toLowerCase(), t.getExeArguments() == null ? "" : t.getExeArguments());
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_TEST).toLowerCase(), t.getTest() == null ? "" : t.getTest());
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_TESTARGS).toLowerCase(), t.getTestArgs() == null ? "" : t.getTestArgs());
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_SCHED).toLowerCase(), t.getSchedule());
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_RES).toLowerCase(), String.valueOf(t.getRequiredResources()));
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_MAXPROCS).toLowerCase(), String.valueOf(t.getMaxInstances()));
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_MAXTIME).toLowerCase(), String.valueOf(t.getMaxTime()));
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_MAXRATIO).toLowerCase(), String.valueOf(t.getMaxTimeRatio()));
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_RCMAX).toLowerCase(), String.valueOf(t.getMaxReturnCode()));
+			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_RCMIN).toLowerCase(), String.valueOf(t.getMinReturnCode()));
+		}
+		try {
+			Writer w = new FileWriter(propsFile);
+			props.store(w, "Generated by SJQv4 agent");
+			w.close();
+			LOG.info("Agent properties file updated via network socket!");
+			return true;
+		} catch(IOException e) {
+			LOG.error("IOError", e);
+			return false;
+		} 
 	}
 }
