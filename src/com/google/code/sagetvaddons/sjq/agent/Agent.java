@@ -45,13 +45,11 @@ public final class Agent {
 			Collection<URL> urls = new ArrayList<URL>();
 			for(Object f : FileUtils.listFiles(engines, new String[] {"jar"}, false))
 				urls.add(((File)f).toURI().toURL());
-			if(urls.size() > 0) {
+			if(urls.size() > 0)
 				clsLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), Agent.class.getClassLoader());
-				cfg.setClsLoader(clsLoader);
-			}
 		}
 		StringBuilder msg = new StringBuilder("The following scripting engines are available in this task client:\n");
-		ScriptEngineManager mgr = new ScriptEngineManager(cfg.getClsLoader());
+		ScriptEngineManager mgr = new ScriptEngineManager(clsLoader);
 		for(ScriptEngineFactory f : mgr.getEngineFactories())
 			msg.append("\t" + f.getEngineName() + "/" + f.getEngineVersion() + " " + f.getExtensions() + "\n");
 		LOG.info(msg.toString());

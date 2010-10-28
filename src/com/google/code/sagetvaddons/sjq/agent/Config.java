@@ -22,6 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import name.pachler.nio.file.FileSystems;
+import name.pachler.nio.file.Path;
+import name.pachler.nio.file.Paths;
+import name.pachler.nio.file.StandardWatchEventKind;
+import name.pachler.nio.file.WatchEvent;
+import name.pachler.nio.file.WatchKey;
+import name.pachler.nio.file.WatchService;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
@@ -35,7 +43,7 @@ public final class Config {
 	static private final int DEFAULT_PORT = 23344;
 	static private final String DEFAULT_SCHED = "* * * * *";
 	static private final int DEFAULT_RESOURCES = 100;
-	
+
 	static private Config INSTANCE = null;
 	static public final Config get(String propsPath) {
 		if(INSTANCE == null)
@@ -45,22 +53,50 @@ public final class Config {
 	static public final Config get() {
 		return get(DEFAULT_PROPS);
 	}
-	
+
+	private class PropsMonitor implements Runnable {
+
+		@Override
+		public void run() {
+			while(true) {
+				WatchKey key = null;
+				try {
+					key = watcher.take();
+				} catch (InterruptedException e) {
+					LOG.warn("Props file monitor stopped!", e);
+					break;
+				}
+				boolean reload = false;
+				for(WatchEvent<?> e : key.pollEvents()) {
+					if(e.kind() == StandardWatchEventKind.ENTRY_MODIFY) {
+						Path path = (Path)e.context();
+						if(path.toString().equals(propsFile.getName())) {
+							reload = true;
+							break;
+						}
+					}
+				}
+				key.reset();
+				if(reload) {
+					LOG.info("Props file update detected, reloading properties from disk!");
+					parseProps();
+				}
+			}
+		}
+
+	}
+
 	private Properties props;
 	private int port;
 	private String schedule;
 	private int totalResources;
-	private ClassLoader clsLoader;
-	
+	private File propsFile;
+	private WatchService watcher;
 	private Map<String, Task> tasks;
-	
+
 	private Config(String propsPath) {
-		port = DEFAULT_PORT;
-		schedule = DEFAULT_SCHED;
-		totalResources = DEFAULT_RESOURCES;
-		clsLoader = null;
-		
-		File propsFile = new File(propsPath);
+		propsFile = new File(propsPath);
+		watcher = FileSystems.getDefault().newWatchService();
 		if(!propsFile.exists()) {
 			LOG.warn("Unable to find specified props file! [" + propsFile.getAbsolutePath() + "]");
 			LOG.warn("Checking for default props file...");
@@ -78,17 +114,42 @@ public final class Config {
 				}
 			}
 		}
+		tasks = new HashMap<String, Task>();
+		parseProps();
+
+		Path path = Paths.get(propsFile.getAbsoluteFile().getParent());
+		try {
+			path.register(watcher, StandardWatchEventKind.ENTRY_MODIFY);
+			LOG.info("Watching '" + path + "'");
+			Thread t = new Thread(new PropsMonitor());
+			t.setDaemon(true);
+			t.start();
+		} catch (IOException e) {
+			LOG.error("Unable to monitor props file '" + propsFile.getAbsolutePath() + "'; changes will not be reflected until an agent restart!", e);
+		}
+	}
+
+	@Override
+	protected void finalize() {
+		try {
+			if(watcher != null)
+				try { watcher.close(); } catch (IOException e) { e.printStackTrace(); }
+		} finally {
+			try { super.finalize(); } catch(Throwable t) { LOG.warn("FinalizeError", t); }
+		}
+	}
+	
+	synchronized private void parseProps() {
 		props = new Properties();
 		try {
 			props.load(new FileReader(propsFile));
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read props file! [" + propsFile.getAbsolutePath() + "]", e);
 		}
-		tasks = new HashMap<String, Task>();
-		parseProps();
-	}
-	
-	private void parseProps() {
+		tasks.clear();
+		port = DEFAULT_PORT;
+		schedule = DEFAULT_SCHED;
+		totalResources = DEFAULT_RESOURCES;
 		for(Object k : props.keySet()) {
 			if(k.toString().toUpperCase().startsWith(TASK_PREFIX)) {
 				String[] parts = k.toString().split("\\.");
@@ -140,43 +201,31 @@ public final class Config {
 	/**
 	 * @return the port
 	 */
-	public int getPort() {
+	synchronized public int getPort() {
 		return port;
 	}
 	/**
 	 * @return the schedule
 	 */
-	public String getSchedule() {
+	synchronized public String getSchedule() {
 		return schedule;
 	}
 	/**
 	 * @return the totalResources
 	 */
-	public int getTotalResources() {
+	synchronized public int getTotalResources() {
 		return totalResources;
 	}
-	
-	public Task[] getTasks() {
+
+	synchronized public Task[] getTasks() {
 		return tasks.values().toArray(new Task[0]);
 	}
-	
-	public String[] getTaskIds() {
+
+	synchronized public String[] getTaskIds() {
 		return tasks.keySet().toArray(new String[0]);
 	}
-	/**
-	 * @return the clsLoader
-	 */
-	public ClassLoader getClsLoader() {
-		return clsLoader;
-	}
-	/**
-	 * @param clsLoader the clsLoader to set
-	 */
-	public void setClsLoader(ClassLoader clsLoader) {
-		this.clsLoader = clsLoader;
-	}
-	
-	public long getMaxTestTime() {
+
+	synchronized public long getMaxTestTime() {
 		return 30;
 	}
 }
