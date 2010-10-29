@@ -137,6 +137,10 @@ final public class ProcessRunner implements Runnable {
 	public void run() {
 		log.info("Starting process runner for: " + qt);
 		boolean forceUpdate = true;
+		if(qt.getExeArguments() != null && qt.getExeArguments().length() > 0)
+			qt.setExeArguments(expandArgs(qt.getExeArguments()));
+		if(qt.getTestArgs() != null && qt.getTestArgs().length() > 0)
+			qt.setTestArgs(expandArgs(qt.getTestArgs()));
 		try {
 			TestResult testResult = runTest();
 			if(testResult == TestResult.FAIL) {
@@ -324,6 +328,15 @@ final public class ProcessRunner implements Runnable {
 		}
 		env.putAll(map);
 		return env;
+	}
+	
+	private final String expandArgs(final String args) {
+		String expandedArgs = args;
+		for(String key : qt.getMetadata().keySet())
+			expandedArgs = expandedArgs.replace("$" + key, qt.getMetadata().get(key));
+		if(!expandedArgs.equals(args))
+			LOG.info("Converted '" + args + "' to '" + expandedArgs + "'");
+		return expandedArgs;
 	}
 
 	static private final String[] getArgsArray(String args) {
