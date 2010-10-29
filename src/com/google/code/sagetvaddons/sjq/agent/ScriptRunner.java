@@ -37,8 +37,8 @@ import sagex.SageAPI;
 import sagex.remote.rmi.RMISageAPI;
 
 import com.google.code.sagetvaddons.sjq.agent.ProcessRunner.ExeResult;
+import com.google.code.sagetvaddons.sjq.network.ServerClient;
 import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
-import com.google.code.sagetvaddons.sjq.taskqueue.ServerClient;
 
 /**
  * @author dbattams
