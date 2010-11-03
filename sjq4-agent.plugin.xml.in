@@ -1,6 +1,6 @@
 <SageTVPlugin>
-	<Name>SJQv4 Agent (Task Client)</Name>
-	<Identifier>sjq4-agent</Identifier>
+	<Name>Sage Job Queue Agent (Task Client)</Name>
+	<Identifier>sjq-agent</Identifier>
 	<Description>
 SJQv4 agent (task client).
 	</Description>
