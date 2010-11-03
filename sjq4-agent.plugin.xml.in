@@ -12,7 +12,7 @@ SJQv4 agent (task client).
 	<Webpage>http://sagetv-addons.googlecode.com</Webpage>
 	<Dependency>
 		<JVM/>
-		<MinVersion>1.6.0</MinVersion>
+		<MinVersion>1.6</MinVersion>
 	</Dependency>
 	<Dependency>
 		<Core/>
