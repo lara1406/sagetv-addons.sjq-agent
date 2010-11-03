@@ -9,11 +9,13 @@
   <property name="app.stable" value="971" />
   <property name="src.token" value="@@" />
   <property name="bld.dir" value="bld" />
+  <property name="sage.jar" value="C:/Program Files/SageTV/SageTV/Sage.jar" />
   <property name="gc.upload.settings" value="C:/snapshots/gc_login.properties" />
 	
   <path id="project.class.path">
     <!-- Add any additional non-server libs (such as JUnit) -->
   	<fileset dir="${app.libs}" includes="**/*.jar"/>
+	<pathelement location="${sage.jar}" />
   </path>
 
 	  <target name="tstamp" description="Generate current timestamp">
@@ -85,7 +87,7 @@
 	<jar destfile="sjq-agent.jar" basedir="${bld.dir}" filesonly="true" />
   </target>
 
-  <target name="zip" depends="jars">
+  <target name="console" depends="jars">
 	<zip destfile="sjq-agent-${app.ver}.${revision.max-with-flags}.zip">
 		<zipfileset dir="lib" includes="*.jar" prefix="sjqagent/lib" />
 		<zipfileset dir="engines" includes="*.jar" prefix="sjqagent/engines" />
@@ -95,14 +97,23 @@
 	</zip>
   </target>
 
-  <target name="winsvc" depends="zip">
+  <target name="winsvc" depends="console">
 	<copy file="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" tofile="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" />
 	<zip destfile="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" duplicate="fail" update="true">
 		<zipfileset dir="winsvc" prefix="sjqagent/" />
 	</zip>
   </target>
 
-  <target name="deliver" depends="winsvc" description="Upload build to Google Code">
+  <target name="plugin" depends="winsvc">
+	<zip destfile="sjq-agent-plugin-${app.ver}.${revision.max-with-flags}.zip" duplicate="fail">
+  		<fileset dir="." includes="sjq-agent.jar" />
+  	</zip>
+  	<zip destfile="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" duplicate="fail">
+  		<zipfileset dir="." prefix="plugins/sjq-agent/" includes="conf/*" />
+  	</zip>
+  </target>
+	
+  <target name="deliver" depends="plugin" description="Upload build to Google Code">
 	<available file="${gc.upload.settings}" property="gc.upload.enable" />
 	<fail message="${gc.upload.settings} file does not exist!" unless="gc.upload.enable" />
 	<property file="${gc.upload.settings}" />
@@ -110,7 +121,9 @@
 	<fail message="gc.password must be defined in ${gc.upload.settings}" unless="gc.password" />
 	<taskdef classname="net.bluecow.googlecode.ant.GoogleCodeUploadTask" name="gcupload" />
 	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 console agent (task client)" labels="QA-Snapshot,Type-Archive,OpSys-All" />
-        <gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 Windows service agent (task client)" labels="QA-Snapshot,Type-Archive,OpSys-All" />
+    <gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 Windows service agent (task client)" labels="QA-Snapshot,Type-Archive,OpSys-Windows" />
+  	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-plugin-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 SageTV plugin agent (task client)" labels="QA-Snapshot,Type-Plugin,OpSys-All" />
+  	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-winsvc-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 SageTV plugin agent (task client)" labels="QA-Snapshot,Type-Plugin,OpSys-All" />
   </target>
 
   <target name="clean" depends="rmgensrc" description="Cleans this project">

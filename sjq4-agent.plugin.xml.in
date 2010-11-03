@@ -1,0 +1,78 @@
+<SageTVPlugin>
+	<Name>SJQv4 Agent (Task Client)</Name>
+	<Identifier>sjq4-agent</Identifier>
+	<Description>
+SJQv4 agent (task client).
+	</Description>
+	<Author>Slugger</Author>
+	<CreationDate>2010.11.03</CreationDate>
+	<ModificationDate>@@MOD_DATE@@</ModificationDate>
+	<Version beta="true">@@VER_NUM@@.@@BLD_NUM@@</Version>
+	<ResourcePath>plugins/sjq4-agent</ResourcePath>
+	<Webpage>http://sagetv-addons.googlecode.com</Webpage>
+	<Dependency>
+		<JVM/>
+		<MinVersion>1.6.0</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Core/>
+		<MinVersion>7.0.18</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>GKusnickToolsLib</Plugin>
+		<MinVersion>1.2</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>sagex-api</Plugin>
+		<MinVersion>7.0.18</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>log4j</Plugin>
+		<MinVerson>1.2.15</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>sagex-h2</Plugin>
+		<MinVersion>1.0.7</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>commons-exec</Plugin>
+		<MinVersion>1.0.1</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>commons-io</Plugin>
+		<MinVersion>1.4</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>commons-lang</Plugin>
+		<MinVersion>2.4</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>sjq-common</Plugin>
+		<MinVersion>4.0.0.1190</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>jpathwatch</Plugin>
+		<MinVersion>0.93.1</MinVersion>
+	</Dependency>
+	<Dependency>
+		<Plugin>groovy</Plugin>
+		<MinVersion>1.7.5</MinVersion>
+	</Dependency>
+	<PluginType>Standard</PluginType>
+	<Package>
+		<PackageType>JAR</PackageType>
+		<Location>http://sagetv-addons.googlecode.com/files/sjq-agent-plugin-@@VER_NUM@@.@@BLD_NUM@@.zip</Location>
+		<MD5>@@JAR_MD5@@</MD5>
+	</Package>
+	<Package>
+		<PackageType>System</Package>
+		<Location>http://sagetv-addons.googlecode.com/files/sjq-agent-plugin-conf-@@VER_NUM@@.@@BLD_NUM@@.zip</Location>
+		<MD5>@@CONF_MD5@@</MD5>
+	</Package>
+	<ImplementationClass>com.google.code.sagetvaddons.sjq.agent.Plugin</ImplementationClass>
+	<ReleaseNotes>
+Changes since @@VER_NUM@@.@@BLD_STABLE@@
+ 
+@@CHG_LOG@@ 
+	</ReleaseNotes>
+</SageTVPlugin>

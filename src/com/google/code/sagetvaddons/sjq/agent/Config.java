@@ -35,6 +35,8 @@ import name.pachler.nio.file.WatchService;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import sagex.SageAPI;
+
 import com.google.code.sagetvaddons.sjq.shared.Client;
 import com.google.code.sagetvaddons.sjq.shared.Task;
 
@@ -112,8 +114,14 @@ public final class Config {
 	private File propsFile;
 	private WatchService watcher;
 	private Map<String, Task> tasks;
-
+	private final String baseDir;
+	
 	private Config(String propsPath) {
+		if(SageAPI.isRemote())
+			baseDir = new File("..").getAbsolutePath();
+		else
+			baseDir = new File("plugins/sjq4-agent").getAbsolutePath();
+		LOG.info("Setting base directory for agent to: " + baseDir);
 		propsFile = new File(propsPath);
 		watcher = FileSystems.getDefault().newWatchService();
 		if(!propsFile.exists()) {
@@ -276,5 +284,9 @@ public final class Config {
 			LOG.error("IOError", e);
 			return false;
 		} 
+	}
+	
+	public String getBaseDir() {
+		return baseDir;
 	}
 }

@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="lib/sjq-common.jar"/>
 	<classpathentry kind="lib" path="lib/sjq-listener.jar"/>
 	<classpathentry kind="lib" path="lib/jpathwatch-0-93-rc1.jar"/>
+	<classpathentry kind="var" path="SAGE_HOME/Sage.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -16,10 +16,12 @@
 package com.google.code.sagetvaddons.sjq.agent;
 
 import java.io.File;
+import java.io.FileReader;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Properties;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -28,28 +30,38 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import sagex.SageAPI;
+
 import com.google.code.sagetvaddons.sjq.listener.Listener;
 
 public final class Agent {
 	static private final Logger LOG = Logger.getLogger(Agent.class);
-	
+
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		PropertyConfigurator.configure("../conf/sjqagent.log4j.properties");
 		Config cfg = Config.get();
-		File engines = new File("../engines");
-		URLClassLoader clsLoader = null;
-		if(engines.isDirectory() && engines.canRead()) {
-			Collection<URL> urls = new ArrayList<URL>();
-			for(Object f : FileUtils.listFiles(engines, new String[] {"jar"}, false))
-				urls.add(((File)f).toURI().toURL());
-			if(urls.size() > 0)
-				clsLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), Agent.class.getClassLoader());
-		}
+		Properties props = new Properties();
+		props.load(new FileReader(new File(cfg.getBaseDir() + "/conf/sjqagent.log4j.properties")));
+		props.setProperty("log4j.appender.sjqAgentApp.File", cfg.getBaseDir() + props.getProperty("log4j.appender.sjqAgentApp.File"));
+		PropertyConfigurator.configure(props);
 		StringBuilder msg = new StringBuilder("The following scripting engines are available in this task client:\n");
-		ScriptEngineManager mgr = new ScriptEngineManager(clsLoader);
+		ScriptEngineManager mgr;
+		if(SageAPI.isRemote()) {
+			File engines = new File(cfg.getBaseDir() + "/engines");
+			URLClassLoader clsLoader = null;
+			if(engines.isDirectory() && engines.canRead()) {
+				Collection<URL> urls = new ArrayList<URL>();
+				for(Object f : FileUtils.listFiles(engines, new String[] {"jar"}, false))
+					urls.add(((File)f).toURI().toURL());
+				if(urls.size() > 0)
+					clsLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), Agent.class.getClassLoader());
+			}
+			mgr = new ScriptEngineManager(clsLoader);
+		}
+		else
+			mgr = new ScriptEngineManager();
 		for(ScriptEngineFactory f : mgr.getEngineFactories())
 			msg.append("\t" + f.getEngineName() + "/" + f.getEngineVersion() + " " + f.getExtensions() + "\n");
 		LOG.info(msg.toString());
