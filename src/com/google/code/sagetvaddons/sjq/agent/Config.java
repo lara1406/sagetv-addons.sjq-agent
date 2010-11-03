@@ -59,14 +59,15 @@ public final class Config {
 	static private final String TASK_OPT_TEST = "TEST";
 	static private final String TASK_OPT_TESTARGS = "TESTARGS";
 	
-	static private final String DEFAULT_PROPS = "../conf/sjqagent.properties";
-	static private final String REFERENCE_PROPS = "../conf/sjqagent.properties.ref";
+	static private final File BASE_DIR = new File(SageAPI.isRemote() ? ".." : "plugins/sjq-agent"); 
+	static private final String DEFAULT_PROPS = BASE_DIR + "/conf/sjqagent.properties";
+	static private final String REFERENCE_PROPS = BASE_DIR + "/conf/sjqagent.properties.ref";
 	static private final int DEFAULT_PORT = 23344;
 	static private final String DEFAULT_SCHED = "* * * * *";
 	static private final int DEFAULT_RESOURCES = 100;
 
 	static private Config INSTANCE = null;
-	static public final Config get(String propsPath) {
+	static private final Config get(String propsPath) {
 		if(INSTANCE == null)
 			INSTANCE = new Config(propsPath);
 		return INSTANCE; 
@@ -114,14 +115,8 @@ public final class Config {
 	private File propsFile;
 	private WatchService watcher;
 	private Map<String, Task> tasks;
-	private final String baseDir;
 	
 	private Config(String propsPath) {
-		if(SageAPI.isRemote())
-			baseDir = new File("..").getAbsolutePath();
-		else
-			baseDir = new File("plugins/sjq4-agent").getAbsolutePath();
-		LOG.info("Setting base directory for agent to: " + baseDir);
 		propsFile = new File(propsPath);
 		watcher = FileSystems.getDefault().newWatchService();
 		if(!propsFile.exists()) {
@@ -287,6 +282,6 @@ public final class Config {
 	}
 	
 	public String getBaseDir() {
-		return baseDir;
+		return BASE_DIR.getAbsolutePath();
 	}
 }

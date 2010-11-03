@@ -113,7 +113,7 @@
   	<zip destfile="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" duplicate="fail">
   		<zipfileset dir="." prefix="plugins/sjq-agent/" includes="conf/*" />
   	</zip>
-  	<checksum file="sjq-agent-conf-plugin-${app.ver}.${revision.max-with-flags}.zip" property="conf.md5" />
+  	<checksum file="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" property="conf.md5" />
   	<replace file="sjq4-agent.plugin.xml" token="@@CONF_MD5@@" value="${conf.md5}" />
   </target>
 	

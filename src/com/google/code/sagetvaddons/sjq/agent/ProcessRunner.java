@@ -37,6 +37,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Logger;
 
+import sagex.SageAPI;
+
 import com.google.code.sagetvaddons.sjq.agent.network.ServerClient;
 import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
 import com.google.code.sagetvaddons.sjq.shared.QueuedTask.State;
@@ -268,8 +270,12 @@ final public class ProcessRunner implements Runnable {
 		if(SystemUtils.IS_OS_WINDOWS)
 			javaExe = javaExe.concat(".exe");
 		CommandLine cmd = new CommandLine(javaExe);
-		Collection<?> jars = FileUtils.listFiles(new File("../lib"), new String[] {"jar"}, false);
-		jars.addAll(FileUtils.listFiles(new File("../engines"), new String[] {"jar"}, false));
+		Collection<?> jars;
+		if(SageAPI.isRemote()) {
+			jars = FileUtils.listFiles(new File("../lib"), new String[] {"jar"}, false);
+			jars.addAll(FileUtils.listFiles(new File("../engines"), new String[] {"jar"}, false));			
+		} else
+			jars = FileUtils.listFiles(new File("JARs"), new String[] {"jar"}, false);
 		cmd.addArguments((String[])ArrayUtils.addAll(new String[] {"-cp", StringUtils.join(jars, SystemUtils.PATH_SEPARATOR), ScriptRunner.class.getName(), qt.getServerHost(), String.valueOf(qt.getRmiPort()), String.valueOf(qt.getQueueId()), script}, args));
 		return runExternalExe(cmd.getExecutable(), cmd.getArguments(), maxTimeMillis);
 	}

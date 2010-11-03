@@ -15,7 +15,7 @@
  */
 package com.google.code.sagetvaddons.sjq.agent;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -24,7 +24,6 @@ import sage.SageTVPlugin;
 import sage.SageTVPluginRegistry;
 import sagex.api.Global;
 
-import com.google.code.sagetvaddons.sjq.network.ServerClient;
 import com.google.code.sagetvaddons.sjq.server.DataStore;
 import com.google.code.sagetvaddons.sjq.shared.Client;
 
@@ -157,6 +156,9 @@ public final class Plugin implements SageTVPlugin {
 	 */
 	@Override
 	public void start() {
+		File logs = new File("plugins/sjq-agent/logs");
+		if(!logs.exists())
+			logs.mkdirs();
 		agent = new Thread() {
 			@Override
 			public void run() {
@@ -175,15 +177,6 @@ public final class Plugin implements SageTVPlugin {
 			Client clnt = new Client(srv, port);
 			ds.saveClient(clnt);
 			LOG.info("Registered plugin agent with server!");
-			ServerClient sc = null;
-			try {
-				sc = new ServerClient();
-				sc.pingTaskClient(clnt);
-			} catch (IOException e) {
-				LOG.error("Error pinging new client!", e);
-			} finally {
-				if(sc != null) sc.close();
-			}
 		}
 	}
 
