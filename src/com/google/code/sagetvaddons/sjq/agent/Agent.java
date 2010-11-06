@@ -46,7 +46,7 @@ public final class Agent {
 		props.load(new FileReader(new File(cfg.getBaseDir() + "/conf/sjqagent.log4j.properties")));
 		props.setProperty("log4j.appender.sjqAgentApp.File", cfg.getBaseDir() + props.getProperty("log4j.appender.sjqAgentApp.File"));
 		PropertyConfigurator.configure(props);
-		StringBuilder msg = new StringBuilder("The following scripting engines are available in this task client:\n");
+		StringBuilder msg = new StringBuilder("SJQv4 Agent (Task Client) v" + cfg.getVersion() + "\n\nThe following scripting engines are available in this task client:\n");
 		ScriptEngineManager mgr;
 		if(SageAPI.isRemote()) {
 			File engines = new File(cfg.getBaseDir() + "/engines");

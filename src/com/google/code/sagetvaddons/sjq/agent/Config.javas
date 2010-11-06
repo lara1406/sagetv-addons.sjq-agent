@@ -284,4 +284,8 @@ public final class Config {
 	public String getBaseDir() {
 		return BASE_DIR.getAbsolutePath();
 	}
+	
+	public String getVersion() {
+		return "@@VER_NUM@@.@@BLD_NUM@@";
+	}
 }
