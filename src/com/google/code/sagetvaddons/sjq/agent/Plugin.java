@@ -16,14 +16,28 @@
 package com.google.code.sagetvaddons.sjq.agent;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import sage.SageTVPlugin;
 import sage.SageTVPluginRegistry;
+import sagex.SageAPI;
 import sagex.api.Global;
 
+import com.google.code.sagetvaddons.sjq.listener.Listener;
 import com.google.code.sagetvaddons.sjq.server.DataStore;
 import com.google.code.sagetvaddons.sjq.shared.Client;
 
@@ -33,23 +47,41 @@ import com.google.code.sagetvaddons.sjq.shared.Client;
  */
 public final class Plugin implements SageTVPlugin {
 	static private final Logger LOG = Logger.getLogger(Plugin.class);
+
+	private class AgentListenerThread extends Thread {
+		private Listener listener;
+		
+		private AgentListenerThread(Listener listener) {
+			this.listener = listener;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				Config cfg = Config.get();
+				Properties props = new Properties();
+				props.load(new FileReader(new File(cfg.getBaseDir() + "/conf/sjqagent.log4j.properties")));
+				props.setProperty("log4j.appender.sjqAgentApp.File", cfg.getBaseDir() + props.getProperty("log4j.appender.sjqAgentApp.File"));
+				PropertyConfigurator.configure(props);
+				StringBuilder msg = new StringBuilder("SJQv4 Agent (Task Client) v" + cfg.getVersion() + "\n\nThe following scripting engines are available in this task client:\n");
+				ScriptEngineManager mgr = new ScriptEngineManager();
+				for(ScriptEngineFactory f : mgr.getEngineFactories())
+					msg.append("\t" + f.getEngineName() + "/" + f.getEngineVersion() + " " + f.getExtensions() + "\n");
+				LOG.info(msg.toString());
+				listener.init();
+			} catch (IOException e) {
+				LOG.error("Error", e);
+			}
+		}
+	}
 	
-	Thread agent;
+	private Listener agent;
 	
 	/**
 	 * 
 	 */
 	public Plugin(SageTVPluginRegistry reg) {
-		agent = new Thread() {
-			@Override
-			public void run() {
-				try {
-					Agent.main(new String[0]);
-				} catch (Exception e) {
-					LOG.warn("Exception", e);
-				}
-			}
-		};
+		
 	}
 
 	/* (non-Javadoc)
@@ -159,17 +191,14 @@ public final class Plugin implements SageTVPlugin {
 		File logs = new File("plugins/sjq-agent/logs");
 		if(!logs.exists())
 			logs.mkdirs();
-		agent = new Thread() {
-			@Override
-			public void run() {
-				try {
-					Agent.main(new String[0]);
-				} catch (Exception e) {
-					LOG.warn("Exception", e);
-				}
-			}
-		};
-		agent.start();
+		try {
+			Thread.sleep(5500);
+		} catch (InterruptedException e) {
+			LOG.error("SleepKilled", e);
+		}
+		agent = new Listener("com.google.code.sagetvaddons.sjq.agent.commands", Config.get().getPort());
+		AgentListenerThread t = new AgentListenerThread(agent);
+		t.start();
 		DataStore ds = DataStore.get();
 		String srv = Global.GetServerAddress();
 		int port = Config.get().getPort();
@@ -185,7 +214,7 @@ public final class Plugin implements SageTVPlugin {
 	 */
 	@Override
 	public void stop() {
-		agent.interrupt();
+		agent.setStopped(true);
 	}
 
 	/* (non-Javadoc)
