@@ -110,11 +110,11 @@ wrapper.logfile.loglevel=INFO
 #  the log is rolled. Size is specified in bytes.  The default value
 #  of 0, disables log rolling.  May abbreviate with the 'k' (kb) or
 #  'm' (mb) suffix.  For example: 10m = 10 megabytes.
-wrapper.logfile.maxsize=0
+wrapper.logfile.maxsize=10m
 
 # Maximum number of rolled log files which will be allowed before old
 #  files are deleted.  The default value of 0 implies no limit.
-wrapper.logfile.maxfiles=0
+wrapper.logfile.maxfiles=5
 
 # Log Level for sys/event log output.  (See docs for log levels)
 wrapper.syslog.loglevel=NONE
@@ -198,10 +198,10 @@ wrapper.event.jvm_restart.email.body=The JVM was restarted.\n\nPlease check on i
 wrapper.name=SJQ4Agent
 
 # Display name of the service
-wrapper.displayname=SJQv4 Task Client Agent for Windows
+wrapper.displayname=SJQv4 Task Client Agent for Windows (v@@VER_NUM@@.@@BLD_NUM@@)
 
 # Description of the service
-wrapper.description=The SJQv4 task client agent
+wrapper.description=The SJQv4 task client agent (v@@VER_NUM@@.@@BLD_NUM@@)
 
 # Service dependencies.  Add dependencies as needed starting from 1
 wrapper.ntservice.dependency.1=

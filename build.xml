@@ -33,7 +33,7 @@
 	  	
 	  <target name="rmgensrc" description="Delete generated src files">
 	  	<delete failonerror="false" verbose="true">
-	  		<fileset dir="." includes="*.plugin.xml" />
+	  		<fileset dir="." includes="*.plugin.xml,winsvc/conf/wrapper.conf" />
 	  		<fileset dir="src" includes="**/Ping.java" />
 	  	</delete>
 	  </target>
