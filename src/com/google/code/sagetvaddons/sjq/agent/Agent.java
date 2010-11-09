@@ -65,7 +65,7 @@ public final class Agent {
 		for(ScriptEngineFactory f : mgr.getEngineFactories())
 			msg.append("\t" + f.getEngineName() + "/" + f.getEngineVersion() + " " + f.getExtensions() + "\n");
 		LOG.info(msg.toString());
-		Listener listener = new Listener("com.google.code.sagetvaddons.sjq.agent.commands", cfg.getPort());
+		Listener listener = new Listener("com.google.code.sagetvaddons.sjq.agent.commands", cfg.getPort(), Agent.class.getPackage().getName());
 		listener.init();
 	}
 }
