@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import sage.SageTVPlugin;
 import sage.SageTVPluginRegistry;
 import sagex.api.Global;
+import sagex.api.Utility;
 
 import com.google.code.sagetvaddons.sjq.server.DataStore;
 import com.google.code.sagetvaddons.sjq.shared.Client;
@@ -171,7 +172,11 @@ public final class Plugin implements SageTVPlugin {
 		};
 		agent.start();
 		DataStore ds = DataStore.get();
-		String srv = Global.GetServerAddress();
+		String srv;
+		if(!Global.IsClient())
+			srv = Global.GetServerAddress();
+		else
+			srv = Utility.GetLocalIPAddress();
 		int port = Config.get().getPort();
 		if(ds.getClient(srv, port) == null) {
 			Client clnt = new Client(srv, port);
