@@ -27,7 +27,7 @@ public final class ServerClient extends ListenerClient {
 	static private final Logger LOG = Logger.getLogger(ServerClient.class);
 
 	public ServerClient(String host, int port) throws IOException {
-		super(host, port);
+		super(host, port, ServerClient.class.getPackage().getName());
 	}
 	
 	public NetworkAck update(QueuedTask qt) {
