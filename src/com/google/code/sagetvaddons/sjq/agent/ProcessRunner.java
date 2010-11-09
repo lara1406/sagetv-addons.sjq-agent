@@ -91,6 +91,8 @@ final public class ProcessRunner implements Runnable {
 		if(k != null) {
 			LOG.warn("Killing task thread '" + threadName + "'");
 			k.kill();
+		} else {
+			LOG.error("Unable to kill '" + threadName + "'; " + ACTIVE_TASKS);
 		}
 		return k != null;
 	}
