@@ -191,11 +191,12 @@ public final class Plugin implements SageTVPlugin {
 				}
 			}
 		}
+		LOG.info("Checking if hostname '" + srv + "' is registered...");
 		int port = Config.get().getPort();
 		if(ds.getClient(srv, port) == null) {
 			Client clnt = new Client(srv, port);
 			ds.saveClient(clnt);
-			LOG.info("Registered plugin agent with server!");
+			LOG.info("Registered '" + srv + "' as plugin agent with server! " + clnt);
 		}
 	}
 
