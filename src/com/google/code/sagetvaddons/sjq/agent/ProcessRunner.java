@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +80,7 @@ final public class ProcessRunner implements Runnable {
 	}
 
 	static public final String SCRIPT_PREFIX = "script:";
-	static final Map<String, Killable> ACTIVE_TASKS = Collections.synchronizedMap(new HashMap<String, Killable>());
+	static final Map<String, Killable> ACTIVE_TASKS = new HashMap<String, Killable>();
 	public static final String genThreadName(QueuedTask qt) {
 		return "SJQ4Task-" + qt.getServerHost() + "-" + qt.getServerPort() + "-" + qt.getQueueId();
 	}
@@ -211,15 +210,15 @@ final public class ProcessRunner implements Runnable {
 
 	private void updateTask() throws IOException {
 		ServerClient clnt = null;
+		try {
+			clnt = new ServerClient(qt.getServerHost(), qt.getServerPort());
+			clnt.update(qt);
+		} finally {
+			if(clnt != null)
+				clnt.close();		
+		}
+		LOG.warn("Removing task from active list: " + genThreadName(qt));
 		synchronized(ProcessRunner.class) {
-			try {
-				clnt = new ServerClient(qt.getServerHost(), qt.getServerPort());
-				clnt.update(qt);
-			} finally {
-				if(clnt != null)
-					clnt.close();		
-			}
-			LOG.warn("Removing task from active list: " + genThreadName(qt));
 			ACTIVE_TASKS.remove(genThreadName(qt));
 		}
 	}
@@ -337,7 +336,7 @@ final public class ProcessRunner implements Runnable {
 		env.putAll(map);
 		return env;
 	}
-	
+
 	private final String expandArgs(final String args) {
 		String expandedArgs = args;
 		for(String key : qt.getMetadata().keySet())
