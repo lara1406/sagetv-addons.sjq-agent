@@ -310,11 +310,8 @@ final public class ProcessRunner implements Runnable {
 			log.error("IOError", e);
 		}
 		StringBuilder output = new StringBuilder();
-		if(stdout.toString().length() > 0) {
-			output.append("----- stdout -----\n\n");
+		if(stdout.toString().length() > 0)
 			output.append(stdout.toString());
-			output.append("------------------\n\n");
-		}
 		if(stderr.toString().length() > 0) {
 			output.append("----- stderr -----\n\n");
 			output.append(stderr.toString());
