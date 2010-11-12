@@ -136,6 +136,7 @@ final class ScriptRunner {
 	}
 	
 	static public void main(String[] args) {
+		Agent.configLog4j();
 		try {
 			SageAPI.setProvider(new RMISageAPI(args[0], Integer.parseInt(args[1])));
 		} catch(Exception e) {
