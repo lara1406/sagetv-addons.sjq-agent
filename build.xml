@@ -6,7 +6,7 @@
 
   <property name="app.libs" value="lib" />
   <property name="app.ver" value="4.0.0" />
-  <property name="app.stable" value="971" />
+  <property name="app.stable" value="1320" />
   <property name="src.token" value="@@" />
   <property name="bld.dir" value="bld" />
   <property name="sage.jar" value="C:/Program Files/SageTV/SageTV/Sage.jar" />
@@ -130,6 +130,11 @@
   	<gcupload username="${gc.username}" password="${gc.password}" projectname="sagetv-addons" filename="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" targetfilename="sjq-agent-plugin-conf-${app.ver}.${revision.max-with-flags}.zip" summary="SJQv4 SageTV plugin agent (task client) config files" labels="QA-Snapshot,Type-Plugin,OpSys-All" />
   </target>
 
+  <target name="submit" depends="deliver" description="Submit plugin to SageTV repository">
+	<taskdef classname="com.google.code.sagetvaddons.dev.ant.task.SageTvPluginSubmitter" name="sagesubmit" />
+	<sagesubmit name="Derek Battams" user="Slugger" email="derek@battams.ca" pluginid="sjq-agent" reqtype="UPGRADE" descriptor="sjq4-agent.plugin.xml" />
+  </target>
+	
   <target name="clean" depends="rmgensrc" description="Cleans this project">
   	<delete dir="${bld.dir}" failonerror="false" />
   	<delete dir="app_plugin" failonerror="false" />
