@@ -1,5 +1,5 @@
 /*
- *      Copyright 2010 Battams, Derek
+ *      Copyright 2010-2011 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ final class ScriptRunner {
 		String ext = script.substring(lastDot + 1);
 		if(lastDot == -1 || ext.length() == 0)
 			return new ExeResult(-1, "Invalid script extension! [" + script + "]");
+		ext = ext.toLowerCase();
 		Bindings bindings = new SimpleBindings();
 		bindings.put("AiringAPI",new sagex.api.AiringAPI());
 		bindings.put("AlbumAPI",new sagex.api.AlbumAPI());
@@ -93,6 +94,7 @@ final class ScriptRunner {
 		bindings.put("SJQ4_METADATA", qt.getMetadata());
 		bindings.put("SJQ4_SCRIPT", script);
 		bindings.put("SJQ4_ARGS", args);
+		bindings.put("Tools", new HelperUtils());
 		ScriptContext context = new SimpleScriptContext();
 		context.setWriter(new StringWriter());
 		context.setErrorWriter(new StringWriter());

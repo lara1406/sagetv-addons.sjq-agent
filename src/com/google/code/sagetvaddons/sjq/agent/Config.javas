@@ -1,5 +1,5 @@
 /*
- *      Copyright 2010 Battams, Derek
+ *      Copyright 2010-2011 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ArrayList;
 
 import name.pachler.nio.file.FileSystems;
 import name.pachler.nio.file.Path;
@@ -33,6 +36,7 @@ import name.pachler.nio.file.WatchKey;
 import name.pachler.nio.file.WatchService;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.code.sagetvaddons.sjq.shared.Client;
@@ -44,6 +48,7 @@ public final class Config {
 	static private final String OPT_PORT = "AGENT.PORT";
 	static private final String OPT_CLNT_SCHED = "AGENT.SCHEDULE";
 	static private final String OPT_CLNT_RES = "AGENT.RESOURCES";
+	static private final String OPT_MAPDIR = "AGENT.MAPDIR";
 	static private final String TASK_PREFIX = "TASK.";
 	static private final String TASK_OPT_EXE = "EXE";
 	static private final String TASK_OPT_ARGS = "ARGS";
@@ -72,7 +77,7 @@ public final class Config {
 	static public final Config get() {
 		return get(DEFAULT_PROPS);
 	}
-
+	
 	private class PropsMonitor implements Runnable {
 
 		@Override
@@ -107,6 +112,7 @@ public final class Config {
 
 	private Properties props;
 	private int port;
+	private Map<String, String> mapDir;
 	private String schedule;
 	private int totalResources;
 	private File propsFile;
@@ -157,7 +163,17 @@ public final class Config {
 			try { super.finalize(); } catch(Throwable t) { LOG.warn("FinalizeError", t); }
 		}
 	}
-	
+
+	private void processMapDir(String input) {
+		mapDir = Collections.synchronizedMap(new HashMap<String, String>());
+		String[] ele = input.split(";");
+		for(String e : ele) {
+			String[] entry = e.split(",");
+			if(entry.length == 2)
+				mapDir.put(entry[0].trim(), entry[1].trim());
+		}
+	}
+
 	synchronized private void parseProps() {
 		props = new Properties();
 		try {
@@ -169,6 +185,7 @@ public final class Config {
 		port = DEFAULT_PORT;
 		schedule = DEFAULT_SCHED;
 		totalResources = DEFAULT_RESOURCES;
+		mapDir = Collections.emptyMap();
 		for(Object k : props.keySet()) {
 			if(k.toString().toUpperCase().startsWith(TASK_PREFIX)) {
 				String[] parts = k.toString().split("\\.");
@@ -213,6 +230,8 @@ public final class Config {
 				schedule = props.getProperty(k.toString());
 			else if(k.toString().toUpperCase().equals(OPT_CLNT_RES))
 				totalResources = Integer.parseInt(props.getProperty(k.toString()));
+			else if(k.toString().toUpperCase().equals(OPT_MAPDIR))
+				processMapDir(props.getProperty(k.toString()));
 			else
 				LOG.warn("Unrecognized property skipped! [" + k + "]");
 		}
@@ -248,11 +267,16 @@ public final class Config {
 		return 30;
 	}
 	
+	public Map<String, String> getMapDir() {
+		return Collections.unmodifiableMap(mapDir);
+	}
+	
 	synchronized public boolean save(Client clnt) {
 		Properties props = new Properties();
 		props.setProperty(OPT_PORT.toLowerCase(), String.valueOf(clnt.getPort()));
 		props.setProperty(OPT_CLNT_SCHED.toLowerCase(), clnt.getSchedule());
 		props.setProperty(OPT_CLNT_RES.toLowerCase(), String.valueOf(clnt.getMaxResources()));
+		props.setProperty(OPT_MAPDIR.toLowerCase(), serializeMapDir());
 		for(Task t : clnt.getTasks()) {
 			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_EXE).toLowerCase(), t.getExecutable());
 			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_ARGS).toLowerCase(), t.getExeArguments() == null ? "" : t.getExeArguments());
@@ -280,5 +304,12 @@ public final class Config {
 	
 	public String getVersion() {
 		return "@@VER_NUM@@.@@BLD_NUM@@";
+	}
+	
+	private String serializeMapDir() {
+		Collection<String> ele = new ArrayList<String>();
+		for(String k : mapDir.keySet())
+			ele.add(k + "," + mapDir.get(k));
+		return StringUtils.join(ele, ';');
 	}
 }
