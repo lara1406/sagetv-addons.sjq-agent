@@ -18,6 +18,8 @@ package com.google.code.sagetvaddons.sjq.agent;
 import java.io.File;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 
 /**
@@ -29,14 +31,13 @@ class HelperUtils {
 	HelperUtils() {}
 
 	public String mapDir(String path) {
-		if(SystemUtils.IS_OS_WINDOWS)
-			path = path.toUpperCase();
 		Map<String, String> mapDir = Config.get().getMapDir();
 		for(String dir : mapDir.keySet()) {
-			if(SystemUtils.IS_OS_WINDOWS)
-				dir = dir.toUpperCase();
-			if(path.startsWith(dir))
-				return path.replace(dir, mapDir.get(dir));
+			if(FilenameUtils.wildcardMatch(path, FilenameUtils.normalizeNoEndSeparator(dir) + File.separator + "*")) {
+				if(SystemUtils.IS_OS_WINDOWS)
+					return StringUtils.replaceOnce(path.toUpperCase(), dir.toUpperCase(), mapDir.get(dir).toUpperCase());
+				return StringUtils.replaceOnce(path, dir, mapDir.get(dir));
+			}
 		}
 		return path;
 	}
