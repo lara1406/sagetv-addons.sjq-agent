@@ -49,7 +49,7 @@ final class ScriptRunner {
 	private String script;
 	private QueuedTask qt;
 	private String[] args;
-
+	
 	/**
 	 * 
 	 */
@@ -94,7 +94,7 @@ final class ScriptRunner {
 		bindings.put("SJQ4_METADATA", qt.getMetadata());
 		bindings.put("SJQ4_SCRIPT", script);
 		bindings.put("SJQ4_ARGS", args);
-		bindings.put("Tools", new HelperUtils());
+		bindings.put("Tools", new HelperUtils(qt));
 		ScriptContext context = new SimpleScriptContext();
 		context.setWriter(new StringWriter());
 		context.setErrorWriter(new StringWriter());

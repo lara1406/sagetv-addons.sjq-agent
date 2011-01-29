@@ -1,5 +1,5 @@
 /*
- *      Copyright 2010 Battams, Derek
+ *      Copyright 2010-2011 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -140,8 +140,7 @@ final public class ProcessRunner implements Runnable {
 	public void run() {
 		log.info("Starting process runner for: " + qt);
 		boolean forceUpdate = true;
-		if(qt.getExeArguments() != null && qt.getExeArguments().length() > 0)
-			qt.setExeArguments(expandArgs(qt.getExeArguments()));
+		ServerClient sc = null;
 		if(qt.getTestArgs() != null && qt.getTestArgs().length() > 0)
 			qt.setTestArgs(expandArgs(qt.getTestArgs()));
 		try {
@@ -153,6 +152,19 @@ final public class ProcessRunner implements Runnable {
 				qt.setState(State.SKIPPED);
 				qt.setCompleted(new Date());
 			} else {
+				String args;
+				try {
+					sc = new ServerClient(qt.getServerHost(), qt.getServerPort());
+					args = sc.getExeArgs(qt);
+					if(args == null)
+						args = qt.getExeArguments() == null ? "" : qt.getExeArguments();
+					qt.setExeArguments(expandArgs(args));
+				} catch(IOException e) {
+					args = null;
+				} finally {
+					if(sc != null)
+						sc.close();
+				}
 				int rc = runExe();
 				qt.setCompleted(new Date());
 				qt.setState(rc >= qt.getMinReturnCode() && rc <= qt.getMaxReturnCode() ? State.COMPLETED : State.FAILED);			

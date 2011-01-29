@@ -16,11 +16,15 @@
 package com.google.code.sagetvaddons.sjq.agent;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
+
+import com.google.code.sagetvaddons.sjq.agent.network.ServerClient;
+import com.google.code.sagetvaddons.sjq.shared.QueuedTask;
 
 /**
  * @author dbattams
@@ -28,8 +32,25 @@ import org.apache.commons.lang.SystemUtils;
  */
 class HelperUtils {
 	
-	HelperUtils() {}
+	private QueuedTask qt;
+	
+	HelperUtils(QueuedTask qt) {
+		this.qt = qt;
+	}
 
+	public boolean setExeArgs(String args) {
+		ServerClient sc = null;
+		try {
+			sc = new ServerClient(qt.getServerHost(), qt.getServerPort());
+			return sc.setExeArgs(qt, args).isOk();
+		} catch(IOException e) {
+			return false;
+		} finally {
+			if(sc != null)
+				sc.close();
+		}
+	}
+		
 	public String mapDir(String path) {
 		Map<String, String> mapDir = Config.get().getMapDir();
 		for(String dir : mapDir.keySet()) {
