@@ -30,6 +30,29 @@ public final class ServerClient extends ListenerClient {
 		super(host, port, ServerClient.class.getPackage().getName());
 	}
 	
+	public NetworkAck setTaskResources(QueuedTask qt, int used) {
+		NetworkAck ack = null;
+		try {
+			ack = sendCmd("SETTASKRES");
+		} catch(IOException e) {
+			setIsValid(false);
+			return null;
+		}
+		if(ack != null && ack.isOk()) {
+			try {
+				getOut().writeObject(qt);
+				getOut().writeInt(used);
+				getOut().flush();
+				return (NetworkAck)readObj();
+			} catch(IOException e) {
+				LOG.error("IOError", e);
+				setIsValid(false);
+				return NetworkAck.get(NetworkAck.ERR + e.getMessage());
+			}
+		}
+		return NetworkAck.get(NetworkAck.ERR + "Set task resources command rejected by server!");
+	}
+	
 	public String getExeArgs(QueuedTask qt) {
 		NetworkAck ack = null;
 		try {

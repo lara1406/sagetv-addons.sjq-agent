@@ -76,7 +76,62 @@ public class Tools {
 				sc.close();
 		}
 	}
-		
+	
+	/**
+	 * <p>Allow dynamic changes to the amount of resouces this task is consuming on the client running it at runtime.</p>
+	 * 
+	 * <p>
+	 *    Use this method to modify the number of resources this task consumes at runtime.  You can call this from
+	 *    a test script or an exe script.  The argument is the new <b>total</b> resources being consumed by the task,
+	 *    it is <b>not</b> an incremental value!
+	 * </p>
+	 * 
+	 * <p>
+	 *    There is a timing issue involved with the use of this method.  It is possible to increase the total resources
+	 *    being used beyond the maximum value under the following circumstances:
+	 *    
+	 *    <ul>
+	 *       <li>Server assigns Task 1 to Client A and it originally uses 50 resources (client max resources is 100)</li>
+	 *       <li>
+	 *          Task 1 dynamically calls this method to increase the used resources for this task to 90, but before the call is
+	 *          made, the server assigns Task 2 to Client A and it uses 30 resources (Client A is now using 80 resources).
+	 *       </li>
+	 *       <li>
+	 *          Now Task 1 increases its resource usage from 50 to 90.  Client A is now using 120 resources (of 100).  This is
+	 *          ok, except that a Client could temporarily be using more than its allotted resources.
+	 *       </li>
+	 *       <li>
+	 *          The opposite can happen if a task dynamically lowers its resource usage.  If the server tries to assigns a new task
+	 *          before the old one lowers its resource usage then the server will refuse to assign the task because there isn't enough
+	 *          resources.  This is ok, as well, with the side effect being that the new task will be delayed assignment until the next
+	 *          check (or possibly assigned to a different client capable of running the task).
+	 *       </li>
+	 *    </ul>
+	 * </p>
+	 * 
+	 * <p>Example:</p>
+	 * <pre>
+	 *    // Set the used resources for this task to 95
+	 *    Tools.setTaskResources(95)
+	 * </pre>
+	 * 
+	 * @param used The new total amount of resources this task is consuming on the client running the task
+	 * @return True on success or false on any failure
+	 * @since 1364
+	 */
+	public boolean setTaskResources(int used) {
+		ServerClient sc = null;
+		try {
+			sc = new ServerClient(qt.getServerHost(), qt.getServerPort());
+			return sc.setTaskResources(qt, used).isOk();
+		} catch(IOException e) {
+			return false;
+		} finally {
+			if(sc != null)
+				sc.close();
+		}
+	}
+	
 	/**
 	 * <p>Remap a file path based on the agent.mapdir settings of the task client running the task.</p>
 	 * 
