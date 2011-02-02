@@ -306,7 +306,7 @@ public final class Config {
 		return "@@VER_NUM@@.@@BLD_NUM@@";
 	}
 	
-	private String serializeMapDir() {
+	public String serializeMapDir() {
 		Collection<String> ele = new ArrayList<String>();
 		for(String k : mapDir.keySet())
 			ele.add(k + "," + mapDir.get(k));

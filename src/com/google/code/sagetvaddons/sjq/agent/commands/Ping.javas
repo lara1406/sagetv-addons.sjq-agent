@@ -46,7 +46,7 @@ public class Ping extends Command {
 			ver = Integer.parseInt(bldVer.substring(0, bldVer.length() - 1));
 		else
 			ver = Integer.parseInt(bldVer);
-		out.writeObject(new Client(Handler.SOCKET_DETAILS.get().getLocalAddress(), cfg.getPort(), 0, cfg.getSchedule(), Client.State.ONLINE, new Date(), cfg.getTotalResources(), cfg.getTasks(), ver));
+		out.writeObject(new Client(Handler.SOCKET_DETAILS.get().getLocalAddress(), cfg.getPort(), 0, cfg.getSchedule(), Client.State.ONLINE, new Date(), cfg.getTotalResources(), cfg.getTasks(), ver, cfg.serializeMapDir()));
 		out.flush();
 		NetworkAck ack = readAck();
 		if(!ack.isOk())
