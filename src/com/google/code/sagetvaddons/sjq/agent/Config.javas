@@ -276,6 +276,7 @@ public final class Config {
 		props.setProperty(OPT_PORT.toLowerCase(), String.valueOf(clnt.getPort()));
 		props.setProperty(OPT_CLNT_SCHED.toLowerCase(), clnt.getSchedule());
 		props.setProperty(OPT_CLNT_RES.toLowerCase(), String.valueOf(clnt.getMaxResources()));
+		processMapDir(clnt.getMapDir());
 		props.setProperty(OPT_MAPDIR.toLowerCase(), serializeMapDir());
 		for(Task t : clnt.getTasks()) {
 			props.setProperty((TASK_PREFIX + t.getId() + "." + TASK_OPT_EXE).toLowerCase(), t.getExecutable());
