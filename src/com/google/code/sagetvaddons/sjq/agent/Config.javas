@@ -61,6 +61,7 @@ public final class Config {
 	static private final String TASK_OPT_RCMAX = "RCMAX";
 	static private final String TASK_OPT_TEST = "TEST";
 	static private final String TASK_OPT_TESTARGS = "TESTARGS";
+	static private final String TASK_OPT_SYSMSG = "SYSMSGONFAIL";
 	
 	static private final String DEFAULT_PROPS = Agent.BASE_DIR + "/conf/sjqagent.properties";
 	static private final String REFERENCE_PROPS = Agent.BASE_DIR + "/conf/sjqagent.properties.ref";
@@ -222,6 +223,8 @@ public final class Config {
 					t.setTest(props.getProperty(k.toString()));
 				else if(option.equals(TASK_OPT_TESTARGS))
 					t.setTestArgs(props.getProperty(k.toString()));
+				else if(option.equals(TASK_OPT_SYSMSG))
+					t.setGenSysMsgOnFailure(Boolean.parseBoolean(props.getProperty(k.toString())));
 				else
 					LOG.warn("Unknown property '" + option + "' defined for task '" + parts[1].toUpperCase() + "', skipping!");
 			} else if(k.toString().toUpperCase().equals(OPT_PORT))
