@@ -65,6 +65,7 @@ public final class ServerClient extends ListenerClient {
 			try {
 				getOut().writeLong(qt.getQueueId());
 				getOut().flush();
+				boolean isOverride = getIn().readBoolean();
 				String args = getIn().readUTF();
 				ack = (NetworkAck)readObj();
 				if(ack == null || !ack.isOk()) {
@@ -72,7 +73,7 @@ public final class ServerClient extends ListenerClient {
 					setIsValid(false);
 					return null;
 				}
-				return args;
+				return isOverride ? args : null;
 			} catch(IOException e) {
 				LOG.error("IOError", e);
 				setIsValid(false);
@@ -93,7 +94,8 @@ public final class ServerClient extends ListenerClient {
 		if(ack != null && ack.isOk()) {
 			try {
 				getOut().writeLong(qt.getQueueId());
-				getOut().writeUTF(args);
+				getOut().writeBoolean(args != null);
+				getOut().writeUTF(args != null ? args : "");
 				getOut().flush();
 				return (NetworkAck)readObj();
 			} catch(IOException e) {
