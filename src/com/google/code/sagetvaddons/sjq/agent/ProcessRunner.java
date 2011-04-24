@@ -356,10 +356,6 @@ final public class ProcessRunner implements Runnable {
 	}
 
 	static private final String[] getArgsArray(String args) {
-		String[] argsArray = new CommandLine("a.exe").addArguments(args).getArguments();
-		for(int i = 0; i < argsArray.length; ++i)
-			if(org.apache.commons.exec.util.StringUtils.isQuoted(argsArray[i]))
-				argsArray[i] = argsArray[i].substring(1, argsArray[i].length() - 1);
-		return argsArray;	
+		return new CommandLine("a.exe").addArguments(args, false).getArguments();
 	}
 }
