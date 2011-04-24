@@ -303,7 +303,7 @@ final public class ProcessRunner implements Runnable {
 		ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 		ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 		CommandLine cmd = new CommandLine(exeFile);
-		cmd.addArguments(args);
+		cmd.addArguments(args, false);
 		Executor executor = new DefaultExecutor();
 		executor.setExitValues(null);
 		executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
@@ -356,6 +356,10 @@ final public class ProcessRunner implements Runnable {
 	}
 
 	static private final String[] getArgsArray(String args) {
-		return new CommandLine("a.exe").addArguments(args).getArguments();
+		String[] argsArray = new CommandLine("a.exe").addArguments(args).getArguments();
+		for(int i = 0; i < argsArray.length; ++i)
+			if(org.apache.commons.exec.util.StringUtils.isQuoted(argsArray[i]))
+				argsArray[i] = argsArray[i].substring(1, argsArray[i].length() - 1);
+		return argsArray;	
 	}
 }
