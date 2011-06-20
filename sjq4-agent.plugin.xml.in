@@ -48,7 +48,7 @@ SJQv4 agent (task client).
 	</Dependency>
 	<Dependency>
 		<Plugin>sjq-common</Plugin>
-		<MinVersion>4.0.0.1404</MinVersion>
+		<MinVersion>4.0.0.1565</MinVersion>
 	</Dependency>
 	<Dependency>
 		<Plugin>jpathwatch</Plugin>
