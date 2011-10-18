@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 
@@ -105,8 +106,10 @@ final class ScriptRunner {
 		if(engine == null)
 			return new ExeResult(-1, "Unsupported script extension '" + ext + "'; maybe you need to install a scripting engine for this language?");
 		FileReader reader = null;
+		int rc;
+		Throwable t = null;
+		StringBuilder output = new StringBuilder();
 		try {
-			int rc;
 			reader = new FileReader(new File(script));
 			Object o = engine.eval(reader, context);
 			if(o == null)
@@ -115,7 +118,20 @@ final class ScriptRunner {
 				rc = (Integer)o;
 			else
 				rc = -1;
-			StringBuilder output = new StringBuilder();
+		} catch (FileNotFoundException e) {
+			rc = -1;
+			t = e;
+		} catch (ScriptException e) {
+			rc = -1;
+			t = e;
+		} finally {
+			if(t != null) {
+				output.append("----- error  -----\n\n");
+				StringWriter stacktrace = new StringWriter();
+				t.printStackTrace(new PrintWriter(stacktrace));
+				output.append(stacktrace.toString());
+				output.append("------------------\n\n");
+			}
 			if(context.getWriter().toString().length() > 0) {
 				output.append("----- stdout -----\n\n");
 				output.append(context.getWriter().toString());
@@ -126,15 +142,10 @@ final class ScriptRunner {
 				output.append(context.getErrorWriter().toString());
 				output.append("------------------\n\n");
 			}
-			return new ExeResult(rc, output.toString());
-		} catch (FileNotFoundException e) {
-			return new ExeResult(-1, e.getMessage());
-		} catch (ScriptException e) {
-			return new ExeResult(-1, e.getMessage());
-		} finally {
 			if(reader != null)
 				try { reader.close(); } catch(IOException e) { e.printStackTrace(); }
 		}
+		return new ExeResult(rc, output.toString());
 	}
 	
 	static public void main(String[] args) {
